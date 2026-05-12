@@ -7,15 +7,33 @@
 name: verify_env_package_libraries
 
 on:
+  push:
+    paths:
+      - '.github/workflows/env_feat_env_verify.yml'
+      - 'bsp/**/Kconfig'
+      - 'bsp/**/rtconfig.h'
+      - 'bsp/**/.config'
+      - 'bsp/**/SConstruct'
+      - 'bsp/**/SConscript'
+      - 'tools/**'
+  pull_request:
+    paths:
+      - '.github/workflows/env_feat_env_verify.yml'
+      - 'bsp/**/Kconfig'
+      - 'bsp/**/rtconfig.h'
+      - 'bsp/**/.config'
+      - 'bsp/**/SConstruct'
+      - 'bsp/**/SConscript'
+      - 'tools/**'
   workflow_dispatch:
     inputs:
       env_repo:
         description: 'Env repository to verify'
-        required: true
+        required: false
         default: 'CYFS3/env'
       env_ref:
         description: 'Env branch, tag, or ref to verify'
-        required: true
+        required: false
         default: 'feat_env'
   repository_dispatch:
     types:
@@ -25,7 +43,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: verify-env-package-libraries-${{ github.ref }}
+  group: verify-env-package-libraries-${{ github.repository }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -93,8 +111,8 @@ jobs:
             min_new_dirs: 2
 
     env:
-      ENV_REPO: ${{ inputs.env_repo || github.event.client_payload.env_repo || 'CYFS3/env' }}
-      ENV_REF: ${{ inputs.env_ref || github.event.client_payload.env_ref || 'feat_env' }}
+      ENV_REPO: ${{ inputs.env_repo || github.event.client_payload.env_repo || vars.ENV_PACKAGE_VERIFY_REPO || 'CYFS3/env' }}
+      ENV_REF: ${{ inputs.env_ref || github.event.client_payload.env_ref || vars.ENV_PACKAGE_VERIFY_REF || 'feat_env' }}
       BSPS: ${{ matrix.bsps }}
       LIBRARIES_DIR: ${{ matrix.libraries_dir }}
       REQUIRED_SYMBOLS: ${{ matrix.required_symbols }}
