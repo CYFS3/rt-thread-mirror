@@ -111,8 +111,8 @@ jobs:
             min_new_dirs: 2
 
     env:
-      ENV_REPO: ${{ inputs.env_repo || github.event.client_payload.env_repo || vars.ENV_PACKAGE_VERIFY_REPO || 'CYFS3/env' }}
-      ENV_REF: ${{ inputs.env_ref || github.event.client_payload.env_ref || vars.ENV_PACKAGE_VERIFY_REF || 'feat_env' }}
+      ENV_REPO: ${{ github.event.inputs.env_repo || github.event.client_payload.env_repo || vars.ENV_PACKAGE_VERIFY_REPO || 'CYFS3/env' }}
+      ENV_REF: ${{ github.event.inputs.env_ref || github.event.client_payload.env_ref || vars.ENV_PACKAGE_VERIFY_REF || 'feat_env' }}
       BSPS: ${{ matrix.bsps }}
       LIBRARIES_DIR: ${{ matrix.libraries_dir }}
       REQUIRED_SYMBOLS: ${{ matrix.required_symbols }}
@@ -144,12 +144,27 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf "${HOME}/.env"
-          git clone --depth 1 --branch "${ENV_REF}" "https://github.com/${ENV_REPO}.git" "${HOME}/.env"
-          git -C "${HOME}/.env" submodule update --init --depth 1
-          if [ -f "${HOME}/.env/requirements.txt" ]; then
-            python3 -m pip install -r "${HOME}/.env/requirements.txt"
+
+          if [[ "${ENV_REPO}" == http://* || "${ENV_REPO}" == https://* || "${ENV_REPO}" == git@* ]]; then
+            env_git_url="${ENV_REPO}"
+          else
+            env_git_url="https://github.com/${ENV_REPO}.git"
           fi
-          git -C "${HOME}/.env" log -1 --oneline
+
+          mkdir -p "${HOME}/.env/local_pkgs" "${HOME}/.env/packages" "${HOME}/.env/tools"
+          git clone --depth 1 "${RTT_PACKAGE_URL:-https://github.com/RT-Thread/packages.git}" "${HOME}/.env/packages/packages"
+          printf '%s\n' 'source "$PKGS_DIR/packages/Kconfig"' > "${HOME}/.env/packages/Kconfig"
+          git clone --depth 1 "${RTT_SDK_URL:-https://github.com/RT-Thread/sdk.git}" "${HOME}/.env/packages/sdk"
+          git clone --depth 1 --branch "${ENV_REF}" "${env_git_url}" "${HOME}/.env/tools/scripts"
+          git -C "${HOME}/.env/tools/scripts" submodule update --init --depth 1
+          if [ -f "${HOME}/.env/tools/scripts/requirements.txt" ]; then
+            python3 -m pip install -r "${HOME}/.env/tools/scripts/requirements.txt"
+          fi
+          printf '%s\n' \
+            'export PATH=`python3 -m site --user-base`/bin:$HOME/.env/tools/scripts:$PATH' \
+            'export RTT_EXEC_PATH=/usr/bin' > "${HOME}/.env/env.sh"
+
+          git -C "${HOME}/.env/tools/scripts" log -1 --oneline
           source "${HOME}/.env/env.sh"
           command -v pkgs
 
