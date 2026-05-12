@@ -198,6 +198,48 @@ jobs:
             exit 1
           fi
 
+          validate_package_bridges() {
+            local bsp="$1"
+            local package_dirs_file="$2"
+            local packages_root="${bsp}/packages"
+
+            if [ ! -d "${packages_root}" ]; then
+              echo "::error file=${packages_root}::expected BSP package bridge directory"
+              exit 1
+            fi
+
+            while IFS= read -r package_dir; do
+              [ -n "${package_dir}" ] || continue
+
+              local source_dir="${LIBRARIES_DIR}/${package_dir}"
+              local bridge_dir="${packages_root}/${package_dir}"
+              local bridge_sconscript="${bridge_dir}/SConscript"
+
+              if [ ! -d "${source_dir}" ]; then
+                echo "::error file=${source_dir}::package source directory is missing from shared libraries"
+                exit 1
+              fi
+              if [ ! -f "${source_dir}/SConscript" ]; then
+                echo "::error file=${source_dir}/SConscript::shared package source SConscript is missing"
+                exit 1
+              fi
+              if [ ! -d "${bridge_dir}" ]; then
+                echo "::error file=${bridge_dir}::BSP package bridge directory is missing"
+                exit 1
+              fi
+              if [ ! -f "${bridge_sconscript}" ]; then
+                echo "::error file=${bridge_sconscript}::BSP package bridge SConscript is missing"
+                exit 1
+              fi
+              if ! grep -q "libraries_path_prefix" "${bridge_sconscript}" || \
+                 ! grep -q "source_path" "${bridge_sconscript}" || \
+                 ! grep -q "SConscript(sconscript)" "${bridge_sconscript}"; then
+                echo "::error file=${bridge_sconscript}::BSP package directory must be a bridge to the shared libraries package source"
+                exit 1
+              fi
+            done < "${package_dirs_file}"
+          }
+
           for index in "${!bsp_list[@]}"; do
             bsp="${bsp_list[$index]}"
             echo "::group::${bsp}"
@@ -270,14 +312,7 @@ jobs:
               fi
             fi
 
-            if [ -d "${bsp}/packages" ]; then
-              mapfile -t local_package_dirs < <(find "${bsp}/packages" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)
-              if [ "${#local_package_dirs[@]}" -ne 0 ]; then
-                echo "::error file=${bsp}/packages::packages were downloaded into the BSP-local packages directory"
-                printf '%s\n' "${local_package_dirs[@]}"
-                exit 1
-              fi
-            fi
+            validate_package_bridges "${bsp}" "${first_package_dirs}"
 
             scons -C "${bsp}" --pyconfig-silent
             echo "::endgroup::"
