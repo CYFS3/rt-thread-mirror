@@ -132,9 +132,12 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y git wget scons python3-pip
+          sudo apt-get install -y git wget
           python3 -m pip install --upgrade pip
-          python3 -m pip install kconfiglib requests tqdm
+          python3 -m pip install scons kconfiglib requests tqdm pyyaml
+          python3 -c "import kconfiglib, requests, tqdm, yaml; print('python deps ok')"
+          command -v scons
+          scons --version
           git config --global http.postBuffer 524288000
           echo "RTT_ROOT=${GITHUB_WORKSPACE}" >> "${GITHUB_ENV}"
           echo "RTT_CC=gcc" >> "${GITHUB_ENV}"
@@ -151,20 +154,25 @@ jobs:
             env_git_url="https://github.com/${ENV_REPO}.git"
           fi
 
-          mkdir -p "${HOME}/.env/local_pkgs" "${HOME}/.env/packages" "${HOME}/.env/tools"
-          git clone --depth 1 "${RTT_PACKAGE_URL:-https://github.com/RT-Thread/packages.git}" "${HOME}/.env/packages/packages"
-          printf '%s\n' 'source "$PKGS_DIR/packages/Kconfig"' > "${HOME}/.env/packages/Kconfig"
-          git clone --depth 1 "${RTT_SDK_URL:-https://github.com/RT-Thread/sdk.git}" "${HOME}/.env/packages/sdk"
-          git clone --depth 1 --branch "${ENV_REF}" "${env_git_url}" "${HOME}/.env/tools/scripts"
+          rm -rf /tmp/env-under-test
+          git clone --depth 1 --branch "${ENV_REF}" "${env_git_url}" /tmp/env-under-test
+          chmod +x /tmp/env-under-test/install_ubuntu.sh
+          /tmp/env-under-test/install_ubuntu.sh
+
+          test -d "${HOME}/.env/tools/scripts"
           git -C "${HOME}/.env/tools/scripts" submodule update --init --depth 1
           if [ -f "${HOME}/.env/tools/scripts/requirements.txt" ]; then
             python3 -m pip install -r "${HOME}/.env/tools/scripts/requirements.txt"
           fi
-          printf '%s\n' \
-            'export PATH=`python3 -m site --user-base`/bin:$HOME/.env/tools/scripts:$PATH' \
-            'export RTT_EXEC_PATH=/usr/bin' > "${HOME}/.env/env.sh"
 
           git -C "${HOME}/.env/tools/scripts" log -1 --oneline
+          expected_commit="$(git -C /tmp/env-under-test rev-parse HEAD)"
+          installed_commit="$(git -C "${HOME}/.env/tools/scripts" rev-parse HEAD)"
+          if [ -n "${expected_commit}" ] && [ "${installed_commit}" != "${expected_commit}" ]; then
+            echo "::error file=install_ubuntu.sh::installer checked out ${installed_commit}, expected ${ENV_REPO}@${ENV_REF} ${expected_commit}"
+            git -C "${HOME}/.env/tools/scripts" remote -v
+            exit 1
+          fi
           source "${HOME}/.env/env.sh"
           command -v pkgs
 
