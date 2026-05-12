@@ -1,0 +1,246 @@
+#
+# Copyright (c) 2006-2026, RT-Thread Development Team
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+name: verify_env_package_libraries
+
+on:
+  workflow_dispatch:
+    inputs:
+      env_repo:
+        description: 'Env repository to verify'
+        required: true
+        default: 'CYFS3/env'
+      env_ref:
+        description: 'Env branch, tag, or ref to verify'
+        required: true
+        default: 'feat_env'
+  repository_dispatch:
+    types:
+      - verify-env-package-libraries
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-env-package-libraries-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-22.04
+    name: ${{ matrix.id }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: at32-f403a-407-reuse
+            bsps: |
+              bsp/at32/at32f403a-start
+              bsp/at32/at32f407-start
+            libraries_dir: bsp/at32/libraries
+            required_symbols: PKG_USING_AT32F403A_407_HAL_DRIVER PKG_USING_AT32F403A_407_CMSIS_DRIVER
+            min_new_dirs: 2
+          - id: ft32-f072
+            bsps: |
+              bsp/ft32/ft32f072xb-starter
+            libraries_dir: bsp/ft32/libraries
+            required_symbols: PKG_USING_FT32F0_STD_DRIVER PKG_USING_FT32F0_CMSIS_DRIVER
+            min_new_dirs: 2
+          - id: gd32-vw55x
+            bsps: |
+              bsp/gd32/risc-v/gd32vw553h-eval
+            libraries_dir: bsp/gd32/risc-v/libraries
+            required_symbols: PKG_USING_GD32_RISCV_SERIES_DRIVER PKG_USING_GD32VW55X_WIFI
+            min_new_dirs: 2
+          - id: hc32-f4-reuse
+            bsps: |
+              bsp/hc32/ev_hc32f448_lqfp80
+              bsp/hc32/ev_hc32f472_lqfp100
+            libraries_dir: bsp/hc32/libraries
+            required_symbols: PKG_USING_HC32F4_CMSIS_DRIVER PKG_USING_HC32F4_SERIES_DRIVER
+            min_new_dirs: 2
+          - id: hpmicro-reuse
+            bsps: |
+              bsp/hpmicro/hpm5300evk
+              bsp/hpmicro/hpm5301evklite
+            libraries_dir: bsp/hpmicro/libraries
+            required_symbols: PKG_USING_HPM_SDK
+            min_new_dirs: 1
+          - id: nuvoton-reuse
+            bsps: |
+              bsp/nuvoton/numaker-m032ki
+              bsp/nuvoton/numaker-m2354
+            libraries_dir: bsp/nuvoton/libraries
+            required_symbols: PKG_USING_NUVOTON_SERIES_DRIVER
+            min_new_dirs: 1
+          - id: nxp-mcx-mcxa-reuse
+            bsps: |
+              bsp/nxp/mcx/mcxa/frdm-mcxa366
+              bsp/nxp/mcx/mcxa/frdm-mcxa346
+            libraries_dir: bsp/nxp/mcx/mcxa/Libraries
+            required_symbols: PKG_USING_NXP_MCX_CMSIS_DRIVER PKG_USING_NXP_MCX_SERIES_DRIVER
+            min_new_dirs: 2
+          - id: stm32-f1-reuse
+            bsps: |
+              bsp/stm32/stm32f103-100ask-pro
+              bsp/stm32/stm32f103-atk-nano
+            libraries_dir: bsp/stm32/libraries
+            required_symbols: PKG_USING_STM32F1_HAL_DRIVER PKG_USING_STM32F1_CMSIS_DRIVER
+            min_new_dirs: 2
+
+    env:
+      ENV_REPO: ${{ inputs.env_repo || github.event.client_payload.env_repo || 'CYFS3/env' }}
+      ENV_REF: ${{ inputs.env_ref || github.event.client_payload.env_ref || 'feat_env' }}
+      BSPS: ${{ matrix.bsps }}
+      LIBRARIES_DIR: ${{ matrix.libraries_dir }}
+      REQUIRED_SYMBOLS: ${{ matrix.required_symbols }}
+      MIN_NEW_DIRS: ${{ matrix.min_new_dirs }}
+
+    steps:
+      - name: Checkout rt-thread
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
+
+      - name: Install host tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y git wget scons python3-pip
+          python3 -m pip install --upgrade pip
+          python3 -m pip install kconfiglib requests tqdm
+          git config --global http.postBuffer 524288000
+          echo "RTT_ROOT=${GITHUB_WORKSPACE}" >> "${GITHUB_ENV}"
+          echo "RTT_CC=gcc" >> "${GITHUB_ENV}"
+
+      - name: Install env under test
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "${HOME}/.env"
+          git clone --depth 1 --branch "${ENV_REF}" "https://github.com/${ENV_REPO}.git" "${HOME}/.env"
+          git -C "${HOME}/.env" submodule update --init --depth 1
+          if [ -f "${HOME}/.env/requirements.txt" ]; then
+            python3 -m pip install -r "${HOME}/.env/requirements.txt"
+          fi
+          git -C "${HOME}/.env" log -1 --oneline
+          source "${HOME}/.env/env.sh"
+          command -v pkgs
+
+      - name: Verify package download location
+        shell: bash
+        run: |
+          set -euo pipefail
+          source "${HOME}/.env/env.sh"
+
+          if [ -e "${LIBRARIES_DIR}" ]; then
+            git clean -ffdx -- "${LIBRARIES_DIR}"
+          fi
+          mkdir -p "${LIBRARIES_DIR}"
+
+          before_dirs="$(mktemp)"
+          first_after_dirs="$(mktemp)"
+          first_package_dirs="$(mktemp)"
+          find "${LIBRARIES_DIR}" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort > "${before_dirs}"
+
+          mapfile -t bsp_list < <(printf '%s\n' "${BSPS}" | sed '/^[[:space:]]*$/d')
+          if [ "${#bsp_list[@]}" -eq 0 ]; then
+            echo "::error::empty BSP list"
+            exit 1
+          fi
+
+          for index in "${!bsp_list[@]}"; do
+            bsp="${bsp_list[$index]}"
+            echo "::group::${bsp}"
+            test -d "${bsp}"
+
+            if [ -e "${bsp}/packages" ]; then
+              git clean -ffdx -- "${bsp}/packages"
+            fi
+
+            for symbol in ${REQUIRED_SYMBOLS}; do
+              if ! grep -REq "^[[:space:]]*#define[[:space:]]+${symbol}([[:space:]]|$)" "${bsp}/rtconfig.h" "${bsp}/.config" 2>/dev/null; then
+                echo "::error file=${bsp}/rtconfig.h::${symbol} is not enabled in ${bsp}"
+                exit 1
+              fi
+            done
+
+            scons -C "${bsp}" --pyconfig-silent
+
+            (
+              cd "${bsp}"
+              pkgs --update
+              pkgs --list
+            )
+
+            current_dirs="$(mktemp)"
+            find "${LIBRARIES_DIR}" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort > "${current_dirs}"
+
+            if [ "${index}" -eq 0 ]; then
+              comm -13 "${before_dirs}" "${current_dirs}" | tee "${first_package_dirs}"
+              actual_new_dirs="$(wc -l < "${first_package_dirs}" | tr -d ' ')"
+              if grep -Fxq packages "${first_package_dirs}"; then
+                echo "::error file=${LIBRARIES_DIR}/packages::packages must be materialized directly under ${LIBRARIES_DIR}, not under a nested packages directory"
+                exit 1
+              fi
+              if [ "${actual_new_dirs}" -lt "${MIN_NEW_DIRS}" ]; then
+                echo "::error file=${LIBRARIES_DIR}::expected at least ${MIN_NEW_DIRS} new package directories, got ${actual_new_dirs}"
+                echo "Before:"
+                cat "${before_dirs}"
+                echo "After:"
+                cat "${current_dirs}"
+                exit 1
+              fi
+              cp "${current_dirs}" "${first_after_dirs}"
+              while IFS= read -r package_dir; do
+                touch "${LIBRARIES_DIR}/${package_dir}/.ci_reuse_sentinel"
+              done < "${first_package_dirs}"
+            else
+              extra_dirs="$(mktemp)"
+              missing_dirs="$(mktemp)"
+              missing_sentinels="$(mktemp)"
+              comm -13 "${first_after_dirs}" "${current_dirs}" > "${extra_dirs}"
+              comm -23 "${first_after_dirs}" "${current_dirs}" > "${missing_dirs}"
+              while IFS= read -r package_dir; do
+                if [ ! -f "${LIBRARIES_DIR}/${package_dir}/.ci_reuse_sentinel" ]; then
+                  echo "${package_dir}" >> "${missing_sentinels}"
+                fi
+              done < "${first_package_dirs}"
+              if [ -s "${extra_dirs}" ] || [ -s "${missing_dirs}" ]; then
+                echo "::error file=${LIBRARIES_DIR}::${bsp} did not reuse the package directories created by ${bsp_list[0]}"
+                echo "Extra package directories:"
+                cat "${extra_dirs}"
+                echo "Missing package directories:"
+                cat "${missing_dirs}"
+                exit 1
+              fi
+              if [ -s "${missing_sentinels}" ]; then
+                echo "::error file=${LIBRARIES_DIR}::${bsp} recreated package directories instead of reusing them"
+                cat "${missing_sentinels}"
+                exit 1
+              fi
+            fi
+
+            if [ -d "${bsp}/packages" ]; then
+              mapfile -t local_package_dirs < <(find "${bsp}/packages" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)
+              if [ "${#local_package_dirs[@]}" -ne 0 ]; then
+                echo "::error file=${bsp}/packages::packages were downloaded into the BSP-local packages directory"
+                printf '%s\n' "${local_package_dirs[@]}"
+                exit 1
+              fi
+            fi
+
+            scons -C "${bsp}" --pyconfig-silent
+            echo "::endgroup::"
+          done
+
+          echo "Package directories reused by this group:"
+          comm -13 "${before_dirs}" "${first_after_dirs}"
