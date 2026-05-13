@@ -121,11 +121,14 @@ jobs:
             min_new_dirs: 1
           - id: nxp-lpc-lpc55s-series-reuse
             bsps: |
-              bsp/nxp/lpc/lpc55s16_nxp_evk
-              bsp/nxp/lpc/lpc55s36_nxp_evk
-              bsp/nxp/lpc/lpc55s06_nxp_evk
-              bsp/nxp/lpc/lpc55s28_nxp_evk
-              bsp/nxp/lpc/lpc55s69_nxp_evk
+              bsp/nxp/lpc/lpc55sxx/lpc55s16_nxp_evk
+              bsp/nxp/lpc/lpc55sxx/lpc55s36_nxp_evk
+              bsp/nxp/lpc/lpc55sxx/lpc55s06_nxp_evk
+              bsp/nxp/lpc/lpc55sxx/lpc55s28_nxp_evk
+              bsp/nxp/lpc/lpc55sxx/lpc55s69_nxp_evk
+            libraries_dir: bsp/nxp/lpc/lpc55sxx/libraries
+            required_symbols: CONFIG_PKG_USING_NXP_LPC55S_DRIVER
+            min_new_dirs: 1
           - id: stm32-f1-reuse
             bsps: |
               bsp/stm32/stm32f103-100ask-pro
@@ -244,8 +247,7 @@ jobs:
                 exit 1
               fi
               if [ ! -f "${source_dir}/SConscript" ]; then
-                echo "::error file=${source_dir}/SConscript::shared package source SConscript is missing"
-                exit 1
+                echo "::warning file=${source_dir}/SConscript::shared package source SConscript is missing; bridge SConscript will skip direct source import"
               fi
               if [ ! -d "${bridge_dir}" ]; then
                 echo "::error file=${bridge_dir}::BSP package bridge directory is missing"

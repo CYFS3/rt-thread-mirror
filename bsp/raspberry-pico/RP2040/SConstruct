@@ -27,7 +27,7 @@ Export('rtconfig')
 # prepare building environment
 objs = PrepareBuilding(env, RTT_ROOT)
 
-# ocwd = os.getcwd()
+ocwd = os.getcwd()
 os.chdir('../libraries/raspberrypi-pico-sdk-latest')
 print("Enter " + os.getcwd())
 if GetOption('clean'):
