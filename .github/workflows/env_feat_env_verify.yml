@@ -127,7 +127,7 @@ jobs:
               bsp/nxp/lpc/lpc55sxx/lpc55s28_nxp_evk
               bsp/nxp/lpc/lpc55sxx/lpc55s69_nxp_evk
             libraries_dir: bsp/nxp/lpc/lpc55sxx/libraries
-            required_symbols: CONFIG_PKG_USING_NXP_LPC55S_DRIVER
+            required_symbols: PKG_USING_NXP_LPC55S_DRIVER
             min_new_dirs: 1
           - id: stm32-f1-reuse
             bsps: |
