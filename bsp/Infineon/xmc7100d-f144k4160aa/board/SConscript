@@ -15,7 +15,7 @@ board.c
 path = [cwd]
 path += [cwd + '/ports']
 
-startup_path_prefix = SDK_LIB
+startup_path_prefix = cwd + '/../../libraries/'
 Tool_path = None
 index = 'Infineon_mtb-pdl-cat1-latest'
 

@@ -20,7 +20,7 @@ if GetDepend(['BSP_USING_WLAN']):
 path =  [cwd]
 
 # add startup txt path
-startup_path_prefix = os.getcwd() + '/../'
+startup_path_prefix = cwd + '/../'
 
 if rtconfig.PLATFORM in ['gcc']:
     # Use standard peripheral library startup files for compatibility
