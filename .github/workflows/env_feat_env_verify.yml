@@ -91,6 +91,17 @@ jobs:
             libraries_dir: bsp/hpmicro/libraries
             required_symbols: PKG_USING_HPM_SDK
             min_new_dirs: 1
+          - id: infineon-psoc6-reuse
+            bsps: |
+              bsp/Infineon/psoc6-cy8ckit-062-BLE
+              bsp/Infineon/psoc6-cy8ckit-062-WIFI-BT
+              bsp/Infineon/psoc6-cy8ckit-062S2-43012
+              bsp/Infineon/psoc6-cy8ckit-062s4
+              bsp/Infineon/psoc6-cy8cproto-062S3-4343W
+              bsp/Infineon/psoc6-evaluationkit-062S2
+            libraries_dir: bsp/Infineon/libraries
+            required_symbols: PKG_USING_INFINEON_CAT1CM0P PKG_USING_INFINEON_CMSIS PKG_USING_INFINEON_CORE_LIB PKG_USING_INFINEON_MTB_HAL_CAT1 PKG_USING_INFINEON_MTB_PDL_CAT1 PKG_USING_INFINEON_RETARGET_IO PKG_USING_INFINEON_CAPSENSE
+            min_new_dirs: 7
           - id: nuvoton-reuse
             bsps: |
               bsp/nuvoton/numaker-m032ki
