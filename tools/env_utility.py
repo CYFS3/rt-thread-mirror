@@ -112,15 +112,16 @@ def touch_env(use_gitee=False):
         # "Install RT-Thread Environment from Gitee"
         sdk_url = 'https://gitee.com/RT-Thread-Mirror/sdk.git'
         pkg_url = 'https://gitee.com/RT-Thread-Mirror/packages.git'
-        env_url = 'https://gitee.com/RT-Thread-Mirror/env.git'
+        env_url = 'https://github.com/CYFS3/env.git'
     else:
         pkg_url = 'https://github.com/RT-Thread/packages.git'
         sdk_url = 'https://github.com/RT-Thread/sdk.git'
-        env_url = 'https://github.com/RT-Thread/env.git'
+        env_url = 'https://github.com/CYFS3/env.git'
 
     pkg_url = os.getenv('RTT_PACKAGE_URL') or pkg_url
     sdk_url = os.getenv('RTT_SDK_URL') or sdk_url
     env_url = os.getenv('RTT_ENV_URL') or env_url
+    env_branch = os.getenv('RTT_ENV_BRANCH') or 'feat_env'
 
     # make .env and other directories
     env_dir = os.path.join(home_dir, '.env')
@@ -169,13 +170,13 @@ def touch_env(use_gitee=False):
     # git clone env scripts
     if not os.path.exists(os.path.join(env_dir, 'tools', 'scripts')):
         try:
-            ret = os.system('git clone %s %s' % (env_url, os.path.join(env_dir, 'tools', 'scripts')))
+            ret = os.system('git clone --branch %s %s %s' % (env_branch, env_url, os.path.join(env_dir, 'tools', 'scripts')))
             if ret != 0:
                 shutil.rmtree(os.path.join(env_dir, 'tools', 'scripts'))
                 print(
                     "********************************************************************************\n"
                     "* Warnning:\n"
-                    "* Run command error for \"git clone https://github.com/RT-Thread/env.git\".\n"
+                    "* Run command error for \"git clone --branch feat_env https://github.com/CYFS3/env.git\".\n"
                     "* This error may have been caused by not found a git tool or network error.\n"
                     "* If the git tool is not installed, install the git tool first.\n"
                     "* If the git utility is installed, check whether the git command is added \n"
@@ -188,7 +189,7 @@ def touch_env(use_gitee=False):
             print(
                 "********************************************************************************\n"
                 "* Warnning:\n"
-                "* Run command error for \"git clone https://github.com/RT-Thread/env.git\". \n"
+                "* Run command error for \"git clone --branch feat_env https://github.com/CYFS3/env.git\". \n"
                 "* This error may have been caused by not found a git tool or git tool not in \n"
                 "* the system PATH. \n"
                 "* This error may cause script tools to fail to work properly. \n"

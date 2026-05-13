@@ -53,9 +53,10 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update
-          wget https://raw.githubusercontent.com/RT-Thread/env/master/install_ubuntu.sh
-          chmod 777 install_ubuntu.sh
-          ./install_ubuntu.sh
+          rm -rf /tmp/cyfs3-env
+          git clone --depth 1 --branch feat_env https://github.com/CYFS3/env.git /tmp/cyfs3-env
+          chmod +x /tmp/cyfs3-env/install_ubuntu.sh
+          /tmp/cyfs3-env/install_ubuntu.sh
           git config --global http.postBuffer 524288000
           echo "RTT_ROOT=${{ github.workspace }}" >> $GITHUB_ENV
           echo "RTT_CC=gcc" >> $GITHUB_ENV
