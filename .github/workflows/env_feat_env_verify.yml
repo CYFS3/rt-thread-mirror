@@ -119,6 +119,13 @@ jobs:
             libraries_dir: bsp/nxp/imx/imxrt/libraries
             required_symbols: PKG_USING_NXP_IMXRT_DRIVER
             min_new_dirs: 1
+          - id: nxp-lpc-lpc55s-series-reuse
+            bsps: |
+              bsp/nxp/lpc/lpc55s16_nxp_evk
+              bsp/nxp/lpc/lpc55s36_nxp_evk
+              bsp/nxp/lpc/lpc55s06_nxp_evk
+              bsp/nxp/lpc/lpc55s28_nxp_evk
+              bsp/nxp/lpc/lpc55s69_nxp_evk
           - id: stm32-f1-reuse
             bsps: |
               bsp/stm32/stm32f103-100ask-pro
