@@ -102,7 +102,7 @@ jobs:
             bsps: |
               bsp/nxp/mcx/mcxa/frdm-mcxa366
               bsp/nxp/mcx/mcxa/frdm-mcxa346
-            libraries_dir: bsp/nxp/mcx/mcxa/Libraries
+            libraries_dir: bsp/nxp/mcx/mcxa/libraries
             required_symbols: PKG_USING_NXP_MCX_CMSIS_DRIVER PKG_USING_NXP_MCX_SERIES_DRIVER
             min_new_dirs: 2
           - id: stm32-f1-reuse
