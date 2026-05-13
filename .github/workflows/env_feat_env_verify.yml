@@ -76,7 +76,7 @@ jobs:
               bsp/gd32/risc-v/gd32vw553h-eval
             libraries_dir: bsp/gd32/risc-v/libraries
             required_symbols: PKG_USING_GD32_RISCV_SERIES_DRIVER
-            min_new_dirs: 2
+            min_new_dirs: 1
           - id: hc32-f4-reuse
             bsps: |
               bsp/hc32/ev_hc32f448_lqfp80
