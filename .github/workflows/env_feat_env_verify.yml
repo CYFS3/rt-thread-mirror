@@ -105,6 +105,20 @@ jobs:
             libraries_dir: bsp/nxp/mcx/mcxa/libraries
             required_symbols: PKG_USING_NXP_MCX_CMSIS_DRIVER PKG_USING_NXP_MCX_SERIES_DRIVER
             min_new_dirs: 2
+          - id: nxp-imx-imxrt-reuse
+            bsps: |
+              bsp/nxp/imx/imxrt/imxrt1052-nxp-evk
+              bsp/nxp/imx/imxrt/imxrt1170-nxp-evk
+              bsp/nxp/imx/imxrt/imxrt1052-seeed-ArchMix
+              bsp/nxp/imx/imxrt/imxrt1021-nxp-evk
+              bsp/nxp/imx/imxrt/imxrt1060-nxp-evk
+              bsp/nxp/imx/imxrt/imxrt1052-atk-commander
+              bsp/nxp/imx/imxrt/imxrt1061-forlinx-OK1061-S
+              bsp/nxp/imx/imxrt/imxrt1052-fire-pro
+              bsp/nxp/imx/imxrt/imxrt1064-nxp-evk
+            libraries_dir: bsp/nxp/imx/imxrt/libraries
+            required_symbols: PKG_USING_NXP_IMXRT_DRIVER
+            min_new_dirs: 1
           - id: stm32-f1-reuse
             bsps: |
               bsp/stm32/stm32f103-100ask-pro
