@@ -79,7 +79,7 @@ objs = PrepareBuilding(env, RTT_ROOT, has_libcpu=False)
 objs.extend(SConscript(os.path.join(libraries_path_prefix, 'drivers', 'SConscript')))
 
 # include cmsis
-objs.extend(SConscript(os.path.join("packages/nxp-lpc55s-series-latest", rtconfig.BSP_LIBRARY_TYPE, 'SConscript')))
+objs.extend(SConscript(os.path.join(libraries_path_prefix, "nxp-lpc55s-series-latest", rtconfig.BSP_LIBRARY_TYPE, 'SConscript')))
 
 # make a building
 DoBuilding(TARGET, objs)
