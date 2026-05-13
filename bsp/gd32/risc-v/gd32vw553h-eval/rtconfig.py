@@ -57,7 +57,7 @@ if PLATFORM == 'gcc':
     # Linking Parameters
     # 添加 --no-warn-mismatch 以忽略预编译库与当前工具链的特权规范版本差异
     # 添加 WiFi ROM 符号表
-    wifi_pkg_path = os.path.join(os.path.dirname(__file__), 'packages', 'gd32vw55x-wifi-latest')
+    wifi_pkg_path = os.path.join(os.path.dirname(__file__), '../libraries', 'gd32vw55x-wifi-latest')
     rom_symbol = os.path.join(wifi_pkg_path, 'rom_export', 'symbol', 'rom_symbol_m.gcc')
     rom_symbol_flag = ''
     if os.path.exists(rom_symbol):
