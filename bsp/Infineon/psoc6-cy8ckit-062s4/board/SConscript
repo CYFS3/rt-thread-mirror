@@ -25,7 +25,7 @@ if GetDepend(['BSP_USING_SLIDER']):
 path = [cwd]
 path += [cwd + '/ports']
 
-startup_path_prefix = SDK_LIB
+startup_path_prefix = cwd + '/../../libraries/'
 Tool_path = None
 index = 'Infineon_mtb-pdl-cat1'
 
