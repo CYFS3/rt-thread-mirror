@@ -61,7 +61,6 @@ jobs:
   test:
     runs-on: ubuntu-22.04
     name: ${{ matrix.platform.UTEST }} :${{ matrix.config_file }}
-    if: github.repository_owner == 'RT-Thread'
     strategy:
       fail-fast: false
       matrix:

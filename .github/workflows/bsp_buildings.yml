@@ -88,7 +88,6 @@ jobs:
     runs-on: ubuntu-22.04
     needs: generate-matrix
     name: ${{ matrix.legs.RTT_BSP }}
-    if: github.repository_owner == 'RT-Thread'
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.generate-matrix.outputs.filtered_matrix) }}
@@ -270,8 +269,12 @@ jobs:
           path: output/
 
       - name: Post failure comment
-        if: failure()
+        if: failure() && github.event_name == 'pull_request'
         run: |
+          if [ -z "${{ secrets.RTTHREAD_GITHUB_TOKEN }}" ]; then
+            echo "Skip failure comment because RTTHREAD_GITHUB_TOKEN is not configured."
+            exit 0
+          fi
           curl -X POST -H "Authorization: token ${{ secrets.RTTHREAD_GITHUB_TOKEN }}" \
           -d '{"body":"@${{ github.actor }}, Thank you for your contribution, but there was an error with the action. Could you please help check the BSP compilation issue? Thank you."}' \
           "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
