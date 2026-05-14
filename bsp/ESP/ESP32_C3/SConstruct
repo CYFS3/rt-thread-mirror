@@ -37,7 +37,7 @@ def elf2image(target, source, env):
 if os.getenv('RTT_ROOT'):
     RTT_ROOT = os.getenv('RTT_ROOT')
 else:
-    RTT_ROOT = os.path.join(os.getcwd(), '..', '..')
+    RTT_ROOT = os.path.join(os.getcwd(), '..', '..','..')
 
 sys.path = sys.path + [os.path.join(RTT_ROOT, 'tools')]
 from building import *
