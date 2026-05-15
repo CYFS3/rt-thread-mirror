@@ -5,6 +5,9 @@ cwd_path = os.getcwd()
 sys.path.append(os.path.join(os.path.dirname(cwd_path), 'rt-thread', 'tools'))
 
 def dist_modify_relative_path(board_kconfig_path):
+    if not os.path.isfile(board_kconfig_path):
+        return
+
     # Read in the file
     with open(board_kconfig_path, 'r') as file :
         filedata = file.read()

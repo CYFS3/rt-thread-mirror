@@ -98,6 +98,49 @@ def bsp_copy_files(bsp_root, dist_dir):
     do_copy_folder(os.path.join(bsp_root), dist_dir,
         ignore_patterns('build', '__pycache__', 'dist', '*.pyc', '*.old', '*.map', 'rtthread.bin', '.sconsign.dblite', '*.elf', '*.axf', 'cconfig.h'))
 
+def _find_bsp_library_dir(BSP_ROOT):
+    search_dir = os.path.abspath(BSP_ROOT)
+
+    while True:
+        for library_name in ['libraries', 'Libraries']:
+            library_dir = os.path.join(search_dir, library_name)
+            if os.path.isdir(library_dir):
+                return library_dir
+
+        parent_dir = os.path.dirname(search_dir)
+        if parent_dir == search_dir:
+            return None
+        search_dir = parent_dir
+
+def bsp_copy_library_packages(BSP_ROOT, dist_dir):
+    package_dir = os.path.join(dist_dir, 'packages')
+    if not os.path.isdir(package_dir):
+        return
+
+    library_dir = _find_bsp_library_dir(BSP_ROOT)
+    if library_dir is None:
+        return
+
+    ignore = ignore_patterns(
+        '.git', '.github', 'build', '__pycache__', 'dist', '*.pyc', '*.old',
+        '*.map', 'rtthread.bin', '.sconsign.dblite', '*.elf', '*.axf',
+        'cconfig.h')
+
+    for package_name in os.listdir(package_dir):
+        if not package_name.endswith('-latest'):
+            continue
+
+        src_dir = os.path.join(library_dir, package_name)
+        dst_dir = os.path.join(package_dir, package_name)
+        if not os.path.isdir(src_dir) or not os.path.isdir(dst_dir):
+            continue
+
+        if os.path.abspath(src_dir) == os.path.abspath(dst_dir):
+            continue
+
+        print('=> package source: %s' % package_name)
+        do_copy_folder(src_dir, dst_dir, ignore)
+
 def bsp_update_sconstruct(dist_dir):
     with open(os.path.join(dist_dir, 'SConstruct'), 'r') as f:
         data = f.readlines()
@@ -136,6 +179,12 @@ def bsp_update_kconfig(dist_dir):
 
 def bsp_update_kconfig_library(dist_dir):
     # change RTT_ROOT in Kconfig
+    library_name = 'libraries'
+    if os.path.isdir(os.path.join(dist_dir, 'Libraries')):
+        library_name = 'Libraries'
+    elif os.path.isdir(os.path.join(dist_dir, 'libraries')):
+        library_name = 'libraries'
+
     if not os.path.isfile(os.path.join(dist_dir, 'Kconfig')):
         return
 
@@ -143,8 +192,9 @@ def bsp_update_kconfig_library(dist_dir):
         data = f.readlines()
     with open(os.path.join(dist_dir, 'Kconfig'), 'w') as f:
         for line in data:
-            if line.find('source') != -1 and line.find('../libraries') != -1:
-                line = line.replace('../libraries', 'libraries')
+            if line.find('source') != -1:
+                line = line.replace('../libraries', library_name)
+                line = line.replace('../Libraries', library_name)
             f.write(line)
 
     # change board/kconfig path
@@ -155,8 +205,9 @@ def bsp_update_kconfig_library(dist_dir):
         data = f.readlines()
     with open(os.path.join(dist_dir, 'board/Kconfig'), 'w') as f:
         for line in data:
-            if line.find('source') != -1 and line.find('../libraries') != -1:
-                line = line.replace('../libraries', 'libraries')
+            if line.find('source') != -1:
+                line = line.replace('../libraries', library_name)
+                line = line.replace('../Libraries', library_name)
             f.write(line)
 
 def zip_dist(dist_dir, dist_name):
@@ -193,6 +244,7 @@ def MkDist(program, BSP_ROOT, RTT_ROOT, Env, project_name, project_path):
         print("=> start dist handle")
         dist_handle = Env['dist_handle']
         dist_handle(BSP_ROOT, dist_dir)
+    bsp_copy_library_packages(BSP_ROOT, dist_dir)
 
     # copy tools directory
     print('=> components')

@@ -11,7 +11,11 @@ def dist_do_building(BSP_ROOT, dist_dir):
     from mkdist import bsp_copy_files
     import rtconfig
 
+    library_dir = os.path.join(dist_dir, 'libraries')
+    library_path = os.path.join(os.path.dirname(BSP_ROOT), 'libraries')
 
     print("=> copy bsp drivers")
     bsp_copy_files(os.path.join(library_path, 'drivers'), os.path.join(library_dir, 'drivers'))
-    shutil.copyfile(os.path.join(library_path, 'Kconfig'), os.path.join(library_dir, 'Kconfig'))
+    library_kconfig = os.path.join(library_path, 'Kconfig')
+    if os.path.isfile(library_kconfig):
+        shutil.copyfile(library_kconfig, os.path.join(library_dir, 'Kconfig'))
