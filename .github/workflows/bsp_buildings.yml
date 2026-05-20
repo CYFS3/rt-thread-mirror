@@ -88,7 +88,6 @@ jobs:
     runs-on: ubuntu-22.04
     needs: generate-matrix
     name: ${{ matrix.legs.RTT_BSP }}
-    if: github.repository_owner != ' '
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.generate-matrix.outputs.filtered_matrix) }}
