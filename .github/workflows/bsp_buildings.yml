@@ -30,7 +30,6 @@ on:
     branches:
       - master
     paths-ignore:
-      - .github/**
       - .gitee/**
       - .hook/**
       - documentation/**
