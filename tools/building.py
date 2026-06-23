@@ -48,6 +48,9 @@ Projects = []
 Rtt_Root = ''
 Env = None
 
+if not hasattr(rtconfig, 'CXXFLAGS') and hasattr(rtconfig, 'CFLAGS'):
+    rtconfig.CXXFLAGS = rtconfig.CFLAGS
+
 def _path_variants(path):
     variants = set()
     if not path:
