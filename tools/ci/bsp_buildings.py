@@ -262,6 +262,8 @@ def build_bsp(bsp, scons_args='',name='default', pre_build_commands=None, post_b
         for file_type in ['*.elf', '*.bin', '*.hex']:
             files = glob.glob(f'{rtt_root}/bsp/{bsp}/{file_type}')
             for file in files:
+                if not os.path.isfile(file):
+                    continue
                 shutil.copy(file, f'{rtt_root}/output/bsp/{bsp}/{name.replace("/", "_")}.{file_type[2:]}')
         if is_env_enabled('RTT_CI_BUILD_DIST'):
             print(f"::group::\tChecking dist project: {bsp} {name}")
