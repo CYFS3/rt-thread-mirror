@@ -167,8 +167,8 @@ jobs:
         shell: bash
         run: |
           armclang --version
-          armlink --version
-          fromelf --version
+          command -v armlink
+          command -v fromelf
           ARMCLANG_BIN="${AC6_TOOLCHAIN_6_24_0:-$(dirname "$(command -v armclang)")}"
           ARMCLANG_BIN="${ARMCLANG_BIN%/}"
           ARMCLANG_ROOT="$(dirname "$ARMCLANG_BIN")"
