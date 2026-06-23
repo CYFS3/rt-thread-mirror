@@ -88,7 +88,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs: generate-matrix
     name: ${{ matrix.legs.RTT_BSP }}
-    if: github.repository_owner == 'RT-Thread'
+    if: github.repository_owner == 'RT-Thread' || github.repository_owner == 'CYFS3'
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.generate-matrix.outputs.filtered_matrix) }}
@@ -142,6 +142,42 @@ jobs:
           /opt/LLVMEmbeddedToolchainForArm-16.0.0-Linux-x86_64/bin/clang --version
           echo "RTT_CC=llvm-arm" >> $GITHUB_ENV
           echo "RTT_EXEC_PATH=/opt/LLVMEmbeddedToolchainForArm-16.0.0-Linux-x86_64/bin" >> $GITHUB_ENV
+
+      - name: Install ArmClang ToolChains
+        if: ${{ matrix.legs.RTT_TOOL_CHAIN == 'armclang' && success() }}
+        uses: ARM-software/cmsis-actions/setup-vcpkg@v1
+        with:
+          version: 2026.04.27
+
+      - name: Activate ArmClang ToolChains
+        if: ${{ matrix.legs.RTT_TOOL_CHAIN == 'armclang' && success() }}
+        uses: ARM-software/cmsis-actions/vcpkg@v1
+        with:
+          config: .github/armclang-vcpkg-configuration.json
+          cache: ${{ runner.os }}-armclang-6.24.0
+
+      - name: Activate ArmClang License
+        if: ${{ matrix.legs.RTT_TOOL_CHAIN == 'armclang' && success() }}
+        uses: ARM-software/cmsis-actions/armlm@v1
+        with:
+          product: KEMDK-COM0
+
+      - name: Configure ArmClang ToolChains
+        if: ${{ matrix.legs.RTT_TOOL_CHAIN == 'armclang' && success() }}
+        shell: bash
+        run: |
+          armclang --version
+          armlink --version
+          fromelf --version
+          ARMCLANG_BIN="${AC6_TOOLCHAIN_6_24_0:-$(dirname "$(command -v armclang)")}"
+          ARMCLANG_BIN="${ARMCLANG_BIN%/}"
+          ARMCLANG_ROOT="$(dirname "$ARMCLANG_BIN")"
+          test -d "$ARMCLANG_ROOT/include"
+          test -d "$ARMCLANG_ROOT/lib"
+          sudo mkdir -p /opt/Keil_v5/ARM
+          sudo ln -sfn "$ARMCLANG_ROOT" /opt/Keil_v5/ARM/ARMCLANG
+          echo "RTT_CC=keil" >> $GITHUB_ENV
+          echo "RTT_EXEC_PATH=/opt/Keil_v5" >> $GITHUB_ENV
 
       - name: Install AArch64 ToolChains
         if: ${{ matrix.legs.RTT_TOOL_CHAIN == 'sourcery-aarch64' && matrix.legs.RTT_SMART_TOOL_CHAIN != 'aarch64-linux-musleabi' && success() }}
