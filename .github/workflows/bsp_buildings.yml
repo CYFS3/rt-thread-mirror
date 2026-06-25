@@ -186,11 +186,21 @@ jobs:
           echo "RTT_CC=keil" >> $GITHUB_ENV
           echo "RTT_EXEC_PATH=/opt/Keil_v5" >> $GITHUB_ENV
           if [ "${{ matrix.legs.RTT_TOOL_CHAIN }}" = "armclang-cbuild" ]; then
-            command -v uv2csolution
-            command -v cbuild
-            command -v cpackget
-            command -v cmake
-            command -v ninja
+            UV2CSOLUTION_BIN="$(dirname "$(command -v uv2csolution)")"
+            CBUILD_BIN="$(dirname "$(command -v cbuild)")"
+            CPACKGET_BIN="$(dirname "$(command -v cpackget)")"
+            CMAKE_BIN="$(dirname "$(command -v cmake)")"
+            NINJA_BIN="$(dirname "$(command -v ninja)")"
+            echo "${UV2CSOLUTION_BIN}/uv2csolution"
+            echo "${CBUILD_BIN}/cbuild"
+            echo "${CPACKGET_BIN}/cpackget"
+            echo "${CMAKE_BIN}/cmake"
+            echo "${NINJA_BIN}/ninja"
+            echo "UV2CSOLUTION_BIN=${UV2CSOLUTION_BIN}" >> $GITHUB_ENV
+            echo "CBUILD_BIN=${CBUILD_BIN}" >> $GITHUB_ENV
+            echo "CPACKGET_BIN=${CPACKGET_BIN}" >> $GITHUB_ENV
+            echo "CMAKE_BIN=${CMAKE_BIN}" >> $GITHUB_ENV
+            echo "NINJA_BIN=${NINJA_BIN}" >> $GITHUB_ENV
             echo "CMSIS_PACK_ROOT=${RUNNER_TEMP}/cmsis-packs" >> $GITHUB_ENV
           fi
 
@@ -324,6 +334,7 @@ jobs:
         run: |
           source ~/.env/env.sh
           if [ "${RTT_TOOL_CHAIN}" = "armclang-cbuild" ]; then
+            export PATH="${UV2CSOLUTION_BIN}:${CBUILD_BIN}:${CPACKGET_BIN}:${CMAKE_BIN}:${NINJA_BIN}:${AC6_TOOLCHAIN_6_24_0}:${PATH}"
             python tools/ci/bsp_cbuildings.py
           else
             python tools/ci/bsp_buildings.py
