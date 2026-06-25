@@ -175,15 +175,19 @@ def build_bsp_with_cbuild(rtt_root, bsp):
         print(f"::error::project.uvprojx not generated for {bsp}")
         return False
 
-    _, res = run_cmd('uv2csolution project.uvprojx', cwd=bsp_dir)
-    if res != 0:
-        print(f"::error::uv2csolution failed for {bsp}")
-        return False
-
+    output, res = run_cmd('uv2csolution project.uvprojx', cwd=bsp_dir)
     solution_file = find_solution_file(bsp_dir)
     if solution_file is None:
         print(f"::error::csolution file not generated for {bsp}")
         return False
+
+    output_text = ''.join(output)
+    if res != 0 and '0 error(s)' not in output_text:
+        print(f"::error::uv2csolution failed for {bsp}")
+        return False
+
+    if res != 0:
+        print(f"::warning::uv2csolution returned {res} with warnings only for {bsp}")
 
     nproc = multiprocessing.cpu_count()
     try:
