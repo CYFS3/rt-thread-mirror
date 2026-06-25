@@ -1,0 +1,15 @@
+{
+  "registries": [
+    {
+      "name": "arm",
+      "kind": "artifact",
+      "location": "https://artifacts.tools.arm.com/vcpkg-ce-registry/registry.zip"
+    }
+  ],
+  "requires": {
+    "arm:cmsis-toolbox": "^2.14.0",
+    "arm:mdk-toolbox": "^1.1.0",
+    "arm:cmake": "^3.31.5",
+    "arm:ninja": "^1.12.0"
+  }
+}

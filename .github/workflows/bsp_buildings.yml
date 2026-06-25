@@ -144,26 +144,33 @@ jobs:
           echo "RTT_EXEC_PATH=/opt/LLVMEmbeddedToolchainForArm-16.0.0-Linux-x86_64/bin" >> $GITHUB_ENV
 
       - name: Install ArmClang ToolChains
-        if: ${{ matrix.legs.RTT_TOOL_CHAIN == 'armclang' && success() }}
+        if: ${{ startsWith(matrix.legs.RTT_TOOL_CHAIN, 'armclang') && success() }}
         uses: ARM-software/cmsis-actions/setup-vcpkg@v1
         with:
           version: 2026.04.27
 
       - name: Activate ArmClang ToolChains
-        if: ${{ matrix.legs.RTT_TOOL_CHAIN == 'armclang' && success() }}
+        if: ${{ startsWith(matrix.legs.RTT_TOOL_CHAIN, 'armclang') && success() }}
         uses: ARM-software/cmsis-actions/vcpkg@v1
         with:
           config: .github/armclang-vcpkg-configuration.json
           cache: ${{ runner.os }}-armclang-6.24.0
 
+      - name: Activate CMSIS CBuild ToolChains
+        if: ${{ matrix.legs.RTT_TOOL_CHAIN == 'armclang-cbuild' && success() }}
+        uses: ARM-software/cmsis-actions/vcpkg@v1
+        with:
+          config: .github/armclang-cbuild-vcpkg-configuration.json
+          cache: ${{ runner.os }}-armclang-cbuild-tools-2.14.0
+
       - name: Activate ArmClang License
-        if: ${{ matrix.legs.RTT_TOOL_CHAIN == 'armclang' && success() }}
+        if: ${{ startsWith(matrix.legs.RTT_TOOL_CHAIN, 'armclang') && success() }}
         uses: ARM-software/cmsis-actions/armlm@v1
         with:
           product: KEMDK-COM0
 
       - name: Configure ArmClang ToolChains
-        if: ${{ matrix.legs.RTT_TOOL_CHAIN == 'armclang' && success() }}
+        if: ${{ startsWith(matrix.legs.RTT_TOOL_CHAIN, 'armclang') && success() }}
         shell: bash
         run: |
           armclang --version
@@ -178,6 +185,14 @@ jobs:
           sudo ln -sfn "$ARMCLANG_ROOT" /opt/Keil_v5/ARM/ARMCLANG
           echo "RTT_CC=keil" >> $GITHUB_ENV
           echo "RTT_EXEC_PATH=/opt/Keil_v5" >> $GITHUB_ENV
+          if [ "${{ matrix.legs.RTT_TOOL_CHAIN }}" = "armclang-cbuild" ]; then
+            command -v uv2csolution
+            command -v cbuild
+            command -v cpackget
+            command -v cmake
+            command -v ninja
+            echo "CMSIS_PACK_ROOT=${RUNNER_TEMP}/cmsis-packs" >> $GITHUB_ENV
+          fi
 
       - name: Install AArch64 ToolChains
         if: ${{ matrix.legs.RTT_TOOL_CHAIN == 'sourcery-aarch64' && matrix.legs.RTT_SMART_TOOL_CHAIN != 'aarch64-linux-musleabi' && success() }}
@@ -305,10 +320,14 @@ jobs:
           RTT_BSP: ${{ matrix.legs.RTT_BSP }}
           RTT_TOOL_CHAIN: ${{ matrix.legs.RTT_TOOL_CHAIN }}
           SRTT_BSP: ${{ join(matrix.legs.SUB_RTT_BSP, ',') }}
-          RTT_CI_BUILD_DIST: ${{ matrix.legs.RTT_TOOL_CHAIN == 'armclang' && '0' || '1' }}
+          RTT_CI_BUILD_DIST: ${{ startsWith(matrix.legs.RTT_TOOL_CHAIN, 'armclang') && '0' || '1' }}
         run: |
           source ~/.env/env.sh
-          python tools/ci/bsp_buildings.py
+          if [ "${RTT_TOOL_CHAIN}" = "armclang-cbuild" ]; then
+            python tools/ci/bsp_cbuildings.py
+          else
+            python tools/ci/bsp_buildings.py
+          fi
 
       - name: Upload output as artifact
         if: ${{ success() }}
