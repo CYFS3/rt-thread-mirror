@@ -107,6 +107,15 @@ def _apply_exec_path_override(env, exec_path):
         if hasattr(rtconfig, name):
             env[key] = getattr(rtconfig, name)
 
+def _normalize_armclang_flags_for_host(env):
+    if rtconfig.PLATFORM == 'armclang' and env['PLATFORM'] != 'win32':
+        for name in ('LFLAGS', 'M_LFLAGS'):
+            if hasattr(rtconfig, name):
+                setattr(rtconfig, name, getattr(rtconfig, name).replace('\\', '/'))
+
+        if hasattr(rtconfig, 'LFLAGS'):
+            env['LINKFLAGS'] = rtconfig.LFLAGS
+
 def _as_unicode(value):
     try:
         unicode
@@ -269,6 +278,7 @@ def PrepareBuilding(env, root_directory, has_libcpu=False, remove_components = [
     utils.ReloadModule(rtconfig) # update environment variables to rtconfig.py
     if exec_path:
         _apply_exec_path_override(env, exec_path)
+    _normalize_armclang_flags_for_host(env)
 
     # some env variables have loaded in Environment() of SConstruct before re-load rtconfig.py;
     # after update rtconfig.py's variables, those env variables need to synchronize
