@@ -3,13 +3,17 @@ name: Code Format with Clang-Format
 on:
   workflow_dispatch:
     inputs:
+      branch:
+        description: "PR 分支名称\nPR branch name"
+        required: true
+        type: string
       exclude_patterns:
         description: "排除文件/目录 (以逗号间隔)\n Files/Directories to exclude(comma-separated)"
         required: false
         default: ''
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ inputs.branch || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -24,13 +28,13 @@ jobs:
     env:
       HEAD_OWNER: ${{ github.repository_owner }}
       SOURCE_REPOSITORY: ${{ github.repository }}
-      TARGET_BRANCH: ${{ github.ref_name }}
+      TARGET_BRANCH: ${{ inputs.branch }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ inputs.branch }}
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
           lfs: false
