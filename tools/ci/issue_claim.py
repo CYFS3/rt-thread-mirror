@@ -20,7 +20,6 @@ from urllib.request import Request, urlopen
 
 
 COMMAND_PATTERN = re.compile(r"\A/(claim|unclaim)\Z", re.IGNORECASE)
-ELIGIBLE_LABELS = frozenset(("good first issue", "help wanted"))
 PROGRESS_LABEL = "in progress"
 MAINTAINER_ROLES = frozenset(("admin", "maintain"))
 MARKER_TEMPLATE = "<!-- rt-thread-issue-claim:{comment_id} -->"
@@ -332,15 +331,6 @@ def event_context(event):
     )
 
 
-def label_names(issue):
-    names = set()
-    for label in issue.get("labels") or []:
-        name = label.get("name") if isinstance(label, dict) else label
-        if isinstance(name, str):
-            names.add(name.casefold())
-    return names
-
-
 def assignee_logins(issue):
     assignees = []
     for assignee in issue.get("assignees") or []:
@@ -353,8 +343,6 @@ def assignee_logins(issue):
 def decide_claim(issue, claimant=None):
     if str(issue.get("state", "")).casefold() != "open":
         return Decision(False, "closed")
-    if not label_names(issue).intersection(ELIGIBLE_LABELS):
-        return Decision(False, "ineligible")
     assignees = assignee_logins(issue)
     if assignees:
         return Decision(False, "assigned", assignees)
@@ -426,11 +414,6 @@ def rejection_message(command, decision):
     if command == "claim":
         if decision.reason == "closed":
             return "This issue is closed and cannot be claimed."
-        if decision.reason == "ineligible":
-            return (
-                "Only open issues labeled `good first issue` or `help wanted` "
-                "can be claimed."
-            )
         if decision.reason == "assigned":
             return "This issue is already assigned to {}.".format(
                 format_users(decision.assignees)
