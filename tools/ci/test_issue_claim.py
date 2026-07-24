@@ -10,7 +10,7 @@ import unittest
 import issue_claim
 
 
-def make_issue(state="open", labels=("good first issue",), assignees=()):
+def make_issue(state="open", labels=(), assignees=()):
     return {
         "state": state,
         "labels": [{"name": label} for label in labels],
@@ -182,17 +182,13 @@ class PermissionTests(unittest.TestCase):
 
 
 class ClaimStateTests(unittest.TestCase):
-    def test_claim_requires_open_eligible_unassigned_issue(self):
+    def test_claim_requires_open_unassigned_issue(self):
         self.assertTrue(issue_claim.decide_claim(make_issue()).allowed)
         self.assertTrue(
-            issue_claim.decide_claim(make_issue(labels=("Help Wanted",))).allowed
+            issue_claim.decide_claim(make_issue(labels=("bug",))).allowed
         )
         self.assertEqual(
             issue_claim.decide_claim(make_issue(state="closed")).reason, "closed"
-        )
-        self.assertEqual(
-            issue_claim.decide_claim(make_issue(labels=("bug",))).reason,
-            "ineligible",
         )
         self.assertEqual(
             issue_claim.decide_claim(make_issue(assignees=("bob",))).reason,
