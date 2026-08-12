@@ -98,8 +98,13 @@ jobs:
           fi
 
           PR_NUMBER=$(jq -r '.[0].number' <<<"$pull_requests")
+          PR_AUTHOR=$(jq -r '.[0].user.login' <<<"$pull_requests")
+          PR_AUTHOR_ID=$(jq -r '.[0].user.id' <<<"$pull_requests")
+          PR_AUTHOR_EMAIL="${PR_AUTHOR_ID}+${PR_AUTHOR}@users.noreply.github.com"
           echo "Matched upstream PR #$PR_NUMBER"
           echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "pr_author=$PR_AUTHOR" >> "$GITHUB_OUTPUT"
+          echo "pr_author_email=$PR_AUTHOR_EMAIL" >> "$GITHUB_OUTPUT"
 
           echo "Fetching changed files for PR #$PR_NUMBER..."
 
@@ -283,21 +288,17 @@ jobs:
       - name: Commit and push changes
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
-          old_head=$(git rev-parse HEAD)
-          committer_name=$(git show -s --format=%cn "$old_head")
-          committer_email=$(git show -s --format=%ce "$old_head")
-          committer_date=$(git show -s --format=%cI "$old_head")
+          PR_AUTHOR="${{ steps.get-pr-info.outputs.pr_author }}"
+          PR_AUTHOR_EMAIL="${{ steps.get-pr-info.outputs.pr_author_email }}"
+
+          git config --local user.name "$PR_AUTHOR"
+          git config --local user.email "$PR_AUTHOR_EMAIL"
 
           git add -A
-          GIT_COMMITTER_NAME="$committer_name" \
-          GIT_COMMITTER_EMAIL="$committer_email" \
-          GIT_COMMITTER_DATE="$committer_date" \
-            git commit --amend --no-edit --no-gpg-sign
-          git push \
-            --force-with-lease="refs/heads/${TARGET_BRANCH}:${old_head}" \
-            origin "HEAD:refs/heads/${TARGET_BRANCH}"
+          git commit -m "style: format code with clang-format [skip ci]"
+          git push origin "HEAD:refs/heads/${TARGET_BRANCH}"
 
-          echo "✅ 格式化结果已追加到分支 ${TARGET_BRANCH} 的最后一个提交"
+          echo "✅ 格式化结果已作为独立提交推送到分支 ${TARGET_BRANCH}"
           
       - name: Summary
         run: |
